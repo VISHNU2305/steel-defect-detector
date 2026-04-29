@@ -79,7 +79,7 @@ This type of system is used in industries like:
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/steel-defect-detector
+git clone https://github.com/VISHNU2305/steel-defect-detector
 cd steel-defect-detector
 ```
 
