@@ -117,7 +117,7 @@ in Japanese industry, and this system aims to support that goal through AI.
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Authors
 
 **Vishnu** — 3rd Year Computer Science Student, Jain University Bangalore  
-Placement Year: 2026
+**meghana**-3rd year computer science Student, Jain University Banglore
