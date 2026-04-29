@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel Defect Detector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 40px;
+            width: 560px;
+            text-align: center;
+        }
+        h1 { color: #00ff88; font-size: 24px; margin-bottom: 8px; }
+        .subtitle { color: #888; margin-bottom: 30px; font-size: 14px; }
+        .upload-area {
+            border: 2px dashed #333;
+            border-radius: 12px;
+            padding: 30px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover { border-color: #00ff88; }
+        .upload-area img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+        }
+        .upload-text { color: #555; font-size: 14px; }
+        input[type="file"] { display: none; }
+        button {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #00cc6a; }
+        .result {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 24px;
+            display: none;
+            text-align: left;
+        }
+        .defect-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .severity {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .severity span {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .high { background: #ff4444; color: #fff; }
+        .medium { background: #ff9900; color: #000; }
+        .low { background: #00ff88; color: #000; }
+        .confidence-label {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 6px;
+        }
+        .confidence-bar-bg {
+            background: #222;
+            border-radius: 8px;
+            height: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .confidence-bar {
+            height: 100%;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            transition: width 0.8s ease;
+        }
+        .description {
+            font-size: 13px;
+            color: #aaa;
+            line-height: 1.6;
+            background: #0a0a0a;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .description strong { color: #fff; }
+        .loading { color: #888; font-size: 14px; display: none; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Steel Defect Detector</h1>
+        <p class="subtitle">AI-powered metal surface inspection system</p>
+
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <img id="preview" src="" alt="" style="display:none"/>
+            <p class="upload-text" id="uploadText">📁 Click to upload a metal surface image</p>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+
+        <p class="loading" id="loading">⏳ Analyzing image...</p>
+        <button onclick="detectDefect()">Detect Defect</button>
+
+        <div class="result" id="result">
+            <div class="defect-name" id="defectName"></div>
+            <div class="severity"><span id="severityBadge"></span></div>
+            <div class="confidence-label">Confidence: <strong id="confidenceVal"></strong></div>
+            <div class="confidence-bar-bg">
+                <div class="confidence-bar" id="confidenceBar" style="width:0%"></div>
+            </div>
+            <div class="description" id="description"></div>
+        </div>
+
+        <div id="yoloResult" style="display:none; margin-top:20px;">
+            <p style="color:#888; font-size:13px; margin-bottom:8px;">
+                🎯 YOLOv8 Detection — Bounding Boxes:
+            </p>
+            <img id="annotatedImg" src="" alt="YOLO Detection" 
+                 style="width:100%; border-radius:12px; border:1px solid #333;"/>
+        </div>
+    </div>
+
+    <script>
+        const defectInfo = {
+            'Crazing': {
+                severity: 'medium',
+                description: '<strong>Crazing</strong> refers to a network of fine cracks on the metal surface. Common in steel that has undergone thermal stress or improper cooling. Affects surface integrity and can propagate under load.'
+            },
+            'Inclusion': {
+                severity: 'high',
+                description: '<strong>Inclusion</strong> defects occur when foreign materials (slag, oxides) become embedded in the steel during manufacturing. These are serious structural defects that can cause failure under stress.'
+            },
+            'Patches': {
+                severity: 'medium',
+                description: '<strong>Patches</strong> are irregular dark or light areas on the surface caused by uneven rolling or surface oxidation. They affect surface quality and coating adhesion.'
+            },
+            'Pitted': {
+                severity: 'low',
+                description: '<strong>Pitted surface</strong> defects are small holes or depressions on the metal surface, typically caused by corrosion or gas evolution during solidification.'
+            },
+            'Rolled': {
+                severity: 'high',
+                description: '<strong>Rolled-in scale</strong> occurs when oxide scale gets pressed into the surface during rolling. It causes surface discontinuities and weakens the material locally.'
+            },
+            'Scratches': {
+                severity: 'low',
+                description: '<strong>Scratches</strong> are linear surface marks caused by mechanical contact during handling or processing. Generally surface-level and do not affect structural integrity.'
+            }
+        };
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('preview').src = e.target.result;
+                    document.getElementById('preview').style.display = 'block';
+                    document.getElementById('uploadText').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function detectDefect() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files[0]) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            const info = defectInfo[data.defect_type];
+
+            document.getElementById('defectName').textContent = data.defect_type;
+            document.getElementById('confidenceVal').textContent = data.confidence + '%';
+            document.getElementById('confidenceBar').style.width = data.confidence + '%';
+            document.getElementById('description').innerHTML = info.description;
+
+            const badge = document.getElementById('severityBadge');
+            badge.textContent = info.severity.toUpperCase() + ' SEVERITY';
+            badge.className = info.severity;
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('annotatedImg').src = 'data:image/jpeg;base64,' + data.annotated_image;
+document.getElementById('yoloResult').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

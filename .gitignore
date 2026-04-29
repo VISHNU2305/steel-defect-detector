@@ -1,0 +1,7 @@
+defect_dataset/
+yolo_dataset/
+yolo_runs/
+__pycache__/
+*.h5
+Thumbs.db
+.vscode/
