@@ -120,4 +120,5 @@ in Japanese industry, and this system aims to support that goal through AI.
 ## 👨‍💻 Authors
 
 **Vishnu** — 3rd Year Computer Science Student, Jain University Bangalore  
-**meghana**-3rd year computer science Student, Jain University Banglore
+**Meghana** — 3rd Year Computer Science Student, Jain University Bangalore
+GitHub: github.com/Meghanamahanandareddy
