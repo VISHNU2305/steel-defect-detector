@@ -73,6 +73,16 @@ This type of system is used in industries like:
 | Frontend | HTML, CSS, JavaScript |
 | Data Analysis | NumPy, Matplotlib |
 
+## Demo Screenshots
+
+### Homepage
+![Homepage](screenshots/homepage.png)
+
+### Defect Detection Result
+![Result](screenshots/result.png)
+
+### YOLOv8 Bounding Box Detection
+![YOLO Detection](screenshots/yolo.png)
 ---
 
 ## 🚀 How to Run
